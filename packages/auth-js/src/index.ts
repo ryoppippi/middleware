@@ -4,8 +4,10 @@ import type { AdapterUser } from '@auth/core/adapters'
 import type { JWT } from '@auth/core/jwt'
 import type { Session } from '@auth/core/types'
 import type { Context, MiddlewareHandler } from 'hono'
-import { env } from 'hono/adapter'
+import { env ,getRuntimeKey} from 'hono/adapter'
 import { HTTPException } from 'hono/http-exception'
+import { setEnvDefaults as coreSetEnvDefaults } from '@auth/core'
+
 
 declare module 'hono' {
   interface ContextVariableMap {
@@ -31,42 +33,70 @@ export interface AuthConfig extends Omit<AuthConfigCore, 'raw'> {}
 
 export type ConfigHandler = (c: Context) => AuthConfig
 
-export function reqWithEnvUrl(req: Request, authUrl?: string): Request {
+export function setEnvDefaults(env: AuthEnv, config: AuthConfig) {
+  config.secret ??= env.AUTH_SECRET
+  config.basePath ||= '/api/auth'
+  coreSetEnvDefaults(env, config)
+}
+
+async function cloneRequest(input: URL | string, request: Request){
+
+  if ( getRuntimeKey() === "bun") {
+  return new Request(input, {
+    method: request.method,
+    headers:new Headers(request.headers),
+    body:
+      request.method === "GET" || request.method === "HEAD"
+        ? undefined
+        : await request.blob(),
+    // @ts-ignore: TS2353
+    referrer: "referrer" in request ? (request.referrer as string) : undefined,
+    // deno-lint-ignore no-explicit-any
+    referrerPolicy: request.referrerPolicy as any,
+    mode: request.mode,
+    credentials: request.credentials,
+    // @ts-ignore: TS2353
+    cache: request.cache,
+    redirect: request.redirect,
+    integrity: request.integrity,
+    keepalive: request.keepalive,
+    signal: request.signal
+  })
+}
+return new Request(input, request)
+}
+
+export async  function reqWithEnvUrl(req: Request, authUrl?: string){
   if (authUrl) {
     const reqUrlObj = new URL(req.url)
     const authUrlObj = new URL(authUrl)
     const props = ['hostname', 'protocol', 'port', 'password', 'username'] as const
     props.forEach((prop) => (reqUrlObj[prop] = authUrlObj[prop]))
-    return new Request(reqUrlObj.href, req)
+    return cloneRequest(reqUrlObj.href, req)
   } else {
-    return req
-  }
-}
-
-function setEnvDefaults(env: AuthEnv, config: AuthConfig) {
-  config.secret ??= env.AUTH_SECRET
-  config.basePath ??= '/api/auth'
-  config.trustHost = true
-  config.redirectProxyUrl ??= env.AUTH_REDIRECT_PROXY_URL
-  config.providers = config.providers.map((p) => {
-    const finalProvider = typeof p === 'function' ? p({}) : p
-    if (finalProvider.type === 'oauth' || finalProvider.type === 'oidc') {
-      const ID = finalProvider.id.toUpperCase()
-      finalProvider.clientId ??= env[`AUTH_${ID}_ID`]
-      finalProvider.clientSecret ??= env[`AUTH_${ID}_SECRET`]
-      if (finalProvider.type === 'oidc') {
-        finalProvider.issuer ??= env[`AUTH_${ID}_ISSUER`]
-      }
+    const url = new URL(req.url)
+    const proto = req.headers.get('x-forwarded-proto')
+    const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host')
+    if (proto != null) url.protocol = proto.endsWith(':') ? proto : proto + ':'
+    if (host!=null) {
+      url.host = host
+      const portMatch = host.match(/:(\d+)$/)
+      if (portMatch) url.port = portMatch[1]
+      else url.port = ''
+      req.headers.delete("x-forwarded-host")
+      req.headers.delete("Host")
+      req.headers.set("Host", host)
     }
-    return finalProvider
-  })
+    return cloneRequest(url.href, req)
+  }
 }
 
 export async function getAuthUser(c: Context): Promise<AuthUser | null> {
   const config = c.get('authConfig')
-  let ctxEnv = env(c) as AuthEnv
+  const ctxEnv = env(c) as AuthEnv
   setEnvDefaults(ctxEnv, config)
-  const origin = ctxEnv.AUTH_URL ? new URL(ctxEnv.AUTH_URL).origin : new URL(c.req.url).origin
+  const authReq = await reqWithEnvUrl(c.req.raw, ctxEnv.AUTH_URL)
+  const origin = new URL(authReq.url).origin
   const request = new Request(`${origin}${config.basePath}/session`, {
     headers: { cookie: c.req.header('cookie') ?? '' },
   })
@@ -119,15 +149,16 @@ export function initAuthConfig(cb: ConfigHandler): MiddlewareHandler {
 export function authHandler(): MiddlewareHandler {
   return async (c) => {
     const config = c.get('authConfig')
-    let ctxEnv = env(c) as AuthEnv
-
+    const ctxEnv = env(c) as AuthEnv
+    
     setEnvDefaults(ctxEnv, config)
 
-    if (!config.secret) {
+    if (!config.secret || config.secret.length === 0) {
       throw new HTTPException(500, { message: 'Missing AUTH_SECRET' })
     }
 
-    const res = await Auth(reqWithEnvUrl(c.req.raw, ctxEnv.AUTH_URL), config)
+    const authReq = await reqWithEnvUrl(c.req.raw, ctxEnv.AUTH_URL)
+    const res = await Auth(authReq, config)
     return new Response(res.body, res)
   }
 }

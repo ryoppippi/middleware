@@ -34,14 +34,30 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@asteasolutions/zod-to-openapi@npm:^7.0.0":
-  version: 7.0.0
-  resolution: "@asteasolutions/zod-to-openapi@npm:7.0.0"
+"@arktype/schema@npm:0.1.4-cjs":
+  version: 0.1.4-cjs
+  resolution: "@arktype/schema@npm:0.1.4-cjs"
+  dependencies:
+    "@arktype/util": "npm:0.0.41-cjs"
+  checksum: dd83edcbd29ab8b1faf4c8aee3d03b7d75a4cc7848c44cffd0580b89cfa0cabd280916fcd94317b89fc9d730a0fb6c9e7f53db9088788f54dd9077d5479c1b2f
+  languageName: node
+  linkType: hard
+
+"@arktype/util@npm:0.0.41-cjs":
+  version: 0.0.41-cjs
+  resolution: "@arktype/util@npm:0.0.41-cjs"
+  checksum: 77013353924d4f1d81eacc782b7bf07ac21fd5e96368505e05f75dfc822933cb3fc65ba055cc60105f5a86f89c9f4d60aa8be8f0942ebee93f0165cbe4e4b2b9
+  languageName: node
+  linkType: hard
+
+"@asteasolutions/zod-to-openapi@npm:^7.1.0":
+  version: 7.1.0
+  resolution: "@asteasolutions/zod-to-openapi@npm:7.1.0"
   dependencies:
     openapi3-ts: "npm:^4.1.2"
   peerDependencies:
     zod: ^3.20.2
-  checksum: 120499b6d997bd3fa21b4e6600f42d6b9201e2a85a7656b722a02c712d6a9fd7c474bf62ad31f76646fbd129d75331408ad3ed5c350c1436856ef306966a33e1
+  checksum: cd2931826073004c240ce8272a390107299881b9ad96fe10a31e824de0ec1b6c97c2949270c09dec9c71c25c45e00de8f03019bb47c8c41f85006a9018fc2d78
   languageName: node
   linkType: hard
 
@@ -1771,12 +1787,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@hono/arktype-validator@workspace:packages/arktype-validator"
   dependencies:
-    arktype: "npm:^1.0.28-alpha"
+    arktype: "npm:^2.0.0-dev.14"
     hono: "npm:^3.11.7"
     tsup: "npm:^8.0.1"
     vitest: "npm:^1.0.4"
   peerDependencies:
-    arktype: ^1.0.28-alpha
+    arktype: ^2.0.0-dev.14
     hono: "*"
   languageName: unknown
   linkType: soft
@@ -2026,6 +2042,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@hono/react-compat@workspace:packages/react-compat":
+  version: 0.0.0-use.local
+  resolution: "@hono/react-compat@workspace:packages/react-compat"
+  dependencies:
+    hono: "npm:4.5.0-rc.1"
+    tsup: "npm:^8.0.1"
+  peerDependencies:
+    hono: ">=4.5.*"
+  languageName: unknown
+  linkType: soft
+
 "@hono/react-renderer@workspace:packages/react-renderer":
   version: 0.0.0-use.local
   resolution: "@hono/react-renderer@workspace:packages/react-renderer"
@@ -2093,13 +2120,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@hono/trpc-server@workspace:packages/trpc-server"
   dependencies:
-    "@trpc/server": "npm:^10.10.0"
+    "@trpc/server": "npm:^10.10.0 || >11.0.0-rc"
     hono: "npm:^4.3.6"
     jest: "npm:^29.7.0"
     rimraf: "npm:^5.0.5"
     zod: "npm:^3.20.2"
   peerDependencies:
-    "@trpc/server": ^10.10.0
+    "@trpc/server": ^10.10.0 || >11.0.0-rc
     hono: ">=4.*"
   languageName: unknown
   linkType: soft
@@ -2128,7 +2155,7 @@ __metadata:
     typia: "npm:^5.0.4"
   peerDependencies:
     hono: ">=3.9.0"
-    typia: ^5.0.4
+    typia: ^6.1.0
   languageName: unknown
   linkType: soft
 
@@ -2139,10 +2166,10 @@ __metadata:
     hono: "npm:^4.0.10"
     jest: "npm:^29.7.0"
     rimraf: "npm:^5.0.5"
-    valibot: "npm:^0.24.1"
+    valibot: "npm:^0.31.0"
   peerDependencies:
     hono: ">=3.9.0"
-    valibot: ">=0.13.1 <1"
+    valibot: ">=0.31.0 <1"
   languageName: unknown
   linkType: soft
 
@@ -2150,15 +2177,15 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@hono/zod-openapi@workspace:packages/zod-openapi"
   dependencies:
-    "@asteasolutions/zod-to-openapi": "npm:^7.0.0"
+    "@asteasolutions/zod-to-openapi": "npm:^7.1.0"
     "@cloudflare/workers-types": "npm:^4.20240117.0"
-    "@hono/zod-validator": "npm:0.2.1"
+    "@hono/zod-validator": "npm:0.2.2"
     hono: "npm:^4.3.6"
     jest: "npm:^29.7.0"
-    openapi3-ts: "npm:^4.1.2"
     tsup: "npm:^8.0.1"
     typescript: "npm:^5.4.4"
     vitest: "npm:^1.4.0"
+    yaml: "npm:^2.4.3"
     zod: "npm:^3.22.1"
   peerDependencies:
     hono: ">=4.3.6"
@@ -2166,7 +2193,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@hono/zod-validator@npm:0.2.1, @hono/zod-validator@workspace:packages/zod-validator":
+"@hono/zod-validator@npm:0.2.2, @hono/zod-validator@workspace:packages/zod-validator":
   version: 0.0.0-use.local
   resolution: "@hono/zod-validator@workspace:packages/zod-validator"
   dependencies:
@@ -3689,10 +3716,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@trpc/server@npm:^10.10.0":
-  version: 10.44.1
-  resolution: "@trpc/server@npm:10.44.1"
-  checksum: 838fb12286b91c4f1fe22479b426d6c1100700d253980c54b3417358008abc5e7c3f7a78f8ac0526d7693fcf70276bf42ce5fd6d25b6db2b6e3fdbe16c087dca
+"@trpc/server@npm:^10.10.0 || >11.0.0-rc":
+  version: 11.0.0-rc.433
+  resolution: "@trpc/server@npm:11.0.0-rc.433"
+  checksum: feb96e58b049566ab4b10ab563130db360ddd80f211a0048e92f5cbbefa0bf174befe776a7fbd8dd799eece61578b3a8d7ce4eca122e1257e49b99f2bd467cd3
   languageName: node
   linkType: hard
 
@@ -5091,10 +5118,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"arktype@npm:^1.0.28-alpha":
-  version: 1.0.28-alpha
-  resolution: "arktype@npm:1.0.28-alpha"
-  checksum: cf5a7a6303dcd42d54f10f83119c90ac382a0b75074716c4b6fcca6e6326ea070b6a8b1ae7a4da576e93e80b312d0d01368937e695074ddd3a53a0dc30fb98b2
+"arktype@npm:^2.0.0-dev.14":
+  version: 2.0.0-dev.12-cjs
+  resolution: "arktype@npm:2.0.0-dev.12-cjs"
+  dependencies:
+    "@arktype/schema": "npm:0.1.4-cjs"
+    "@arktype/util": "npm:0.0.41-cjs"
+  checksum: b0e7fc182bb6d4d0d4e125744a5b8233295d2ca30715f1bafdd158d37ed8abffafe0f5ef28ff8f99f82ffb1b8d1f36fcc282035c4ef4b909a748c1d520044afc
   languageName: node
   linkType: hard
 
@@ -9576,6 +9606,13 @@ __metadata:
     typescript: "npm:^5.2.2"
   languageName: unknown
   linkType: soft
+
+"hono@npm:4.5.0-rc.1":
+  version: 4.5.0-rc.1
+  resolution: "hono@npm:4.5.0-rc.1"
+  checksum: aaba4187da6dfb697b63772fd3f05466697a01eb2cc8a0c189a0bc464d49f6cedc1caa107b390488634e72544551ed8b34d906b9ef5c5780f1860a68666d56de
+  languageName: node
+  linkType: hard
 
 "hono@npm:^3.11.7":
   version: 3.11.7
@@ -18161,10 +18198,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"valibot@npm:^0.24.1":
-  version: 0.24.1
-  resolution: "valibot@npm:0.24.1"
-  checksum: 637c3641bc800506982ea507c55b65154653ea1f38bf3c7ad6c0fc3dd3bead4644e2172ddd8cade2821c280886dd9d99b36e7a778607cae7dfab107de74c5547
+"valibot@npm:^0.31.0":
+  version: 0.31.1
+  resolution: "valibot@npm:0.31.1"
+  checksum: 666abefeffe1b92e324bc1f35e9052929365d9646f324197d21a506ada07e605958853e04144996b698c866cc327be78138712a5b79e1dbe98caf52229b49fc0
   languageName: node
   linkType: hard
 
@@ -19144,6 +19181,15 @@ __metadata:
   version: 2.3.4
   resolution: "yaml@npm:2.3.4"
   checksum: cf03b68f8fef5e8516b0f0b54edaf2459f1648317fc6210391cf606d247e678b449382f4bd01f77392538429e306c7cba8ff46ff6b37cac4de9a76aff33bd9e1
+  languageName: node
+  linkType: hard
+
+"yaml@npm:^2.4.3":
+  version: 2.4.3
+  resolution: "yaml@npm:2.4.3"
+  bin:
+    yaml: bin.mjs
+  checksum: b4a9dea34265f000402c909144ac310be42c4526dfd16dff1aee2b04a0d94051713651c0cd2b0a3d8109266997422120f16a7934629d12f22dc215839ebbeccf
   languageName: node
   linkType: hard
 

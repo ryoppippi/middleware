@@ -1,5 +1,17 @@
 # @hono/auth-js
 
+## 1.0.9
+
+### Patch Changes
+
+- [#598](https://github.com/honojs/middleware/pull/598) [`eb7e597aaabce2b2ac6e7809579c44f440c2b8b0`](https://github.com/honojs/middleware/commit/eb7e597aaabce2b2ac6e7809579c44f440c2b8b0) Thanks [@divyam234](https://github.com/divyam234)! - fix bun req cloning
+
+## 1.0.8
+
+### Patch Changes
+
+- [#549](https://github.com/honojs/middleware/pull/549) [`d5ebee9c70b5c6e9ecdcadd39805a6a7c481c0ee`](https://github.com/honojs/middleware/commit/d5ebee9c70b5c6e9ecdcadd39805a6a7c481c0ee) Thanks [@divyam234](https://github.com/divyam234)! - handle x-forwarded headers to detect auth url
+
 ## 1.0.7
 
 ### Patch Changes

@@ -1,18 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type {
-  ResponseConfig,
   RouteConfig as RouteConfigBase,
   ZodContentObject,
   ZodMediaTypeObject,
   ZodRequestBody,
 } from '@asteasolutions/zod-to-openapi'
 import {
+  OpenAPIRegistry,
   OpenApiGeneratorV3,
   OpenApiGeneratorV31,
-  OpenAPIRegistry,
+  extendZodWithOpenApi,
 } from '@asteasolutions/zod-to-openapi'
-import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
 import type { OpenAPIObjectConfig } from '@asteasolutions/zod-to-openapi/dist/v3.0/openapi-generator'
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
@@ -27,11 +26,18 @@ import type {
   TypedResponse,
 } from 'hono'
 import type { MergePath, MergeSchemaPath } from 'hono/types'
-import type { StatusCode } from 'hono/utils/http-status'
-import type { Prettify, RemoveBlankRecord } from 'hono/utils/types'
+import type { JSONParsed, RemoveBlankRecord } from 'hono/utils/types'
+import type {
+  ClientErrorStatusCode,
+  InfoStatusCode,
+  RedirectStatusCode,
+  ServerErrorStatusCode,
+  StatusCode,
+  SuccessStatusCode,
+} from 'hono/utils/http-status'
 import { mergePath } from 'hono/utils/url'
-import type { AnyZodObject, ZodSchema, ZodError } from 'zod'
-import { z, ZodType } from 'zod'
+import type { ZodError, ZodSchema } from 'zod'
+import { ZodType, z } from 'zod'
 
 type MaybePromise<T> = Promise<T> | T
 
@@ -41,10 +47,10 @@ export type RouteConfig = RouteConfigBase & {
 
 type RequestTypes = {
   body?: ZodRequestBody
-  params?: AnyZodObject
-  query?: AnyZodObject
-  cookies?: AnyZodObject
-  headers?: AnyZodObject | ZodType<unknown>[]
+  params?: ZodType
+  query?: ZodType
+  cookies?: ZodType
+  headers?: ZodType | ZodType[]
 }
 
 type IsJson<T> = T extends string
@@ -70,7 +76,7 @@ type InputTypeBase<
   Part extends string,
   Type extends string
 > = R['request'] extends RequestTypes
-  ? RequestPart<R, Part> extends AnyZodObject
+  ? RequestPart<R, Part> extends ZodType
     ? {
         in: { [K in Type]: z.input<RequestPart<R, Part>> }
         out: { [K in Type]: z.output<RequestPart<R, Part>> }
@@ -143,13 +149,28 @@ type ExtractContent<T> = T extends {
     : never
   : never
 
+type StatusCodeRangeDefinitions = {
+  '1XX': InfoStatusCode
+  '2XX': SuccessStatusCode
+  '3XX': RedirectStatusCode
+  '4XX': ClientErrorStatusCode
+  '5XX': ServerErrorStatusCode
+}
+type RouteConfigStatusCode = keyof StatusCodeRangeDefinitions | StatusCode
+type ExtractStatusCode<T extends RouteConfigStatusCode> = T extends keyof StatusCodeRangeDefinitions
+  ? StatusCodeRangeDefinitions[T]
+  : T
 export type RouteConfigToTypedResponse<R extends RouteConfig> = {
-  [Status in keyof R['responses'] & StatusCode]: IsJson<
+  [Status in keyof R['responses'] & RouteConfigStatusCode]: IsJson<
     keyof R['responses'][Status]['content']
   > extends never
-    ? TypedResponse<{}, Status, string>
-    : TypedResponse<ExtractContent<R['responses'][Status]['content']>, Status, 'json'>
-}[keyof R['responses'] & StatusCode]
+    ? TypedResponse<{}, ExtractStatusCode<Status>, string>
+    : TypedResponse<
+        JSONParsed<ExtractContent<R['responses'][Status]['content']>>,
+        ExtractStatusCode<Status>,
+        'json'
+      >
+}[keyof R['responses'] & RouteConfigStatusCode]
 
 export type Hook<T, E extends Env, P extends string, R> = (
   result:
@@ -277,7 +298,7 @@ export class OpenAPIHono<
       InputTypeJson<R>,
     P extends string = ConvertPathType<R['path']>
   >(
-    route: R,
+    { middleware: routeMiddleware, ...route }: R,
     handler: Handler<
       E,
       P,
@@ -300,7 +321,17 @@ export class OpenAPIHono<
           I,
           E,
           P,
-          RouteConfigToTypedResponse<R> | Response | Promise<Response> | void | Promise<void>
+          R extends {
+            responses: {
+              [statusCode: number]: {
+                content: {
+                  [mediaType: string]: ZodMediaTypeObject
+                }
+              }
+            }
+          }
+            ? MaybePromise<RouteConfigToTypedResponse<R>> | undefined
+            : MaybePromise<RouteConfigToTypedResponse<R>> | MaybePromise<Response> | undefined
         >
       | undefined = this.defaultHook
   ): OpenAPIHono<
@@ -357,10 +388,10 @@ export class OpenAPIHono<
       }
     }
 
-    const middleware = route.middleware
-      ? Array.isArray(route.middleware)
-        ? route.middleware
-        : [route.middleware]
+    const middleware = routeMiddleware
+      ? Array.isArray(routeMiddleware)
+        ? routeMiddleware
+        : [routeMiddleware]
       : []
 
     this.on(
@@ -373,16 +404,22 @@ export class OpenAPIHono<
     return this
   }
 
-  getOpenAPIDocument = (config: OpenAPIObjectConfig) => {
+  getOpenAPIDocument = (
+    config: OpenAPIObjectConfig
+  ): ReturnType<typeof generator.generateDocument> => {
     const generator = new OpenApiGeneratorV3(this.openAPIRegistry.definitions)
     const document = generator.generateDocument(config)
-    return document
+    // @ts-expect-error the _basePath is a private property
+    return this._basePath ? addBasePathToDocument(document, this._basePath) : document
   }
 
-  getOpenAPI31Document = (config: OpenAPIObjectConfig) => {
+  getOpenAPI31Document = (
+    config: OpenAPIObjectConfig
+  ): ReturnType<typeof generator.generateDocument> => {
     const generator = new OpenApiGeneratorV31(this.openAPIRegistry.definitions)
     const document = generator.generateDocument(config)
-    return document
+    // @ts-expect-error the _basePath is a private property
+    return this._basePath ? addBasePathToDocument(document, this._basePath) : document
   }
 
   doc = <P extends string>(
@@ -501,3 +538,16 @@ export const createRoute = <P extends string, R extends Omit<RouteConfig, 'path'
 
 extendZodWithOpenApi(z)
 export { z }
+
+function addBasePathToDocument(document: Record<string, any>, basePath: string) {
+  const updatedPaths: Record<string, any> = {}
+
+  Object.keys(document.paths).forEach((path) => {
+    updatedPaths[mergePath(basePath, path)] = document.paths[path]
+  })
+
+  return {
+    ...document,
+    paths: updatedPaths,
+  }
+}
