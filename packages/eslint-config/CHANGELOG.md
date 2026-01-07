@@ -1,5 +1,11 @@
 # @hono/eslint-config
 
+## 2.0.5
+
+### Patch Changes
+
+- [#1681](https://github.com/honojs/middleware/pull/1681) [`03a28c5d5c54b6b889d2b8b35d828166b64d92db`](https://github.com/honojs/middleware/commit/03a28c5d5c54b6b889d2b8b35d828166b64d92db) Thanks [@BarryThePenguin](https://github.com/BarryThePenguin)! - Allow more types as template expressions
+
 ## 2.0.4
 
 ### Patch Changes
